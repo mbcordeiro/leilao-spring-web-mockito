@@ -4,6 +4,7 @@ import br.com.alura.leilao.dao.LeilaoDao;
 import br.com.alura.leilao.model.Lance;
 import br.com.alura.leilao.model.Leilao;
 import br.com.alura.leilao.model.Usuario;
+import br.com.alura.leilao.service.EnviadorDeEmails;
 import br.com.alura.leilao.service.FinalizarLeilaoService;
 import org.junit.Assert;
 import org.junit.Test;
@@ -22,10 +23,13 @@ public class FinalizarLeilaoServiceTest {
     @Mock
     private LeilaoDao leilaoDao;
 
+    @Mock
+    private EnviadorDeEmails enviadorDeEmails;
+
     @BeforeEach
     public void beforeEach() {
         MockitoAnnotations.initMocks(this);
-        this.service = new FinalizarLeilaoService(leilaoDao);
+        this.service = new FinalizarLeilaoService(leilaoDao, enviadorDeEmails);
     }
 
     @Test
@@ -43,6 +47,22 @@ public class FinalizarLeilaoServiceTest {
 
         Mockito.verify(leilaoDao).salvar(leilao);
 
+    }
+
+    @Test
+    public void deverEnviarEmailParaVencedorDoLeilao() {
+        List<Leilao> leiloes = leiloes();
+
+        Mockito.when(leilaoDao.buscarLeiloesExpirados())
+                .thenReturn(leiloes);
+
+        service.finalizarLeiloesExpirados();
+
+        Leilao leilao = leiloes.get(0);
+        Lance lanceVencedor = leilao.getLanceVencedor();
+
+        Mockito.verify(enviadorDeEmails)
+                .enviarEmailVencedorLeilao(lanceVencedor);
     }
 
     private List<Leilao> leiloes() {
